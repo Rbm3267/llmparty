@@ -5,7 +5,7 @@ import Configuration from './components/Configuration';
 import Models from './components/Models';
 import Logs from './components/Logs';
 import Settings from './components/Settings';
-import logo from './assets/logo.jpg';
+import logo from './assets/logo.svg';
 import './App.css';
 
 // Browser fallback API

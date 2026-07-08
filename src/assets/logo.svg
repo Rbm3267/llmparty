@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="partyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e879f9" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Glowing Hexagon -->
+  <polygon points="50,12 83,31 83,69 50,88 17,69 17,31" 
+           fill="none" 
+           stroke="url(#partyGradient)" 
+           stroke-width="8" 
+           stroke-linejoin="round"
+           filter="url(#glow)"/>
+           
+  <!-- Inner Star / Party Sparkle -->
+  <path d="M50 35 L53 47 L65 50 L53 53 L50 65 L47 53 L35 50 L47 47 Z" 
+        fill="url(#partyGradient)" 
+        filter="url(#glow)"/>
+</svg>
