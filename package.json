@@ -1,0 +1,42 @@
+{
+  "name": "llmparty",
+  "private": true,
+  "version": "0.0.0",
+  "main": "main.js",
+  "bin": {
+    "llmparty": "./cli.js"
+  },
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:9988 && NODE_ENV=development electron .\"",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "server": "node server.js"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.1.1",
+    "@mui/material": "^9.1.1",
+    "apexcharts": "^5.15.0",
+    "react": "^19.2.6",
+    "react-apexcharts": "^2.1.0",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^10.0.3",
+    "electron": "^42.4.1",
+    "electron-packager": "^17.1.2",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "vite": "^8.0.12",
+    "wait-on": "^9.0.10"
+  }
+}

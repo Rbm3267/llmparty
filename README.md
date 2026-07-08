@@ -2,6 +2,10 @@
 
 **LLMParty** is a resilient, intelligent AI gateway and terminal multiplexer. It allows you to seamlessly route prompts across primary cloud providers (like Claude via the Claude CLI) and automatically fail over to local backups (like LM Studio or Ollama) with zero downtime if you hit rate limits, spend caps, or auth errors.
 
+![LLMParty React Dashboard Configuration Page](assets/dashboard.jpg)
+
+![LLMParty Terminal UI Status Bar](assets/cli.jpg)
+
 > 🌐 **Interactive Overview**: Open `overview.html` in your browser for a visual overview of the project's features and UI!
 
 ## ✨ Key Features

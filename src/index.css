@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ── Backgrounds ── deep dark with purple tint */
+  --bg-base:       #07050f;
+  --bg-surface:    #0c0817;
+  --bg-elevated:   #110d20;
+  --bg-overlay:    #181228;
+  --border:        rgba(168, 85, 247, 0.12);
+  --border-bright: rgba(168, 85, 247, 0.25);
+
+  /* ── Party Accent Palette ── */
+  --accent-primary: #e879f9;   /* fuchsia — THE party color */
+  --accent-violet:  #a855f7;   /* purple */
+  --accent-cyan:    #22d3ee;   /* electric cyan */
+  --accent-green:   #4ade80;   /* neon lime */
+  --accent-rose:    #fb7185;   /* hot pink / error */
+  --accent-amber:   #fbbf24;   /* warm gold */
+  --accent-orange:  #fb923c;   /* neon orange */
+
+  /* ── Text ── */
+  --text-primary:   #f0e8ff;
+  --text-secondary: #a78bca;
+  --text-muted:     #5b4a7a;
+
+  --sidebar-w: 220px;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(232,121,249,0.35); }
+
+/* ── Keyframe Animations ── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(232,121,249,0.4); }
+  50%       { box-shadow: 0 0 18px rgba(232,121,249,0.7); }
+}
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(168,85,247,0.2); }
+  50%       { border-color: rgba(232,121,249,0.45); }
+}
+
+.fade-in { animation: fadeInUp 0.25s ease both; }
+
+/* ── Status Dots ── */
+.dot-online  {
+  width:7px; height:7px; border-radius:50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 6px var(--accent-green);
+  animation: pulse-dot 2s ease-in-out infinite;
+  display: inline-block;
+}
+.dot-offline {
+  width:7px; height:7px; border-radius:50%;
+  background: var(--accent-rose);
+  box-shadow: 0 0 6px var(--accent-rose);
+  display: inline-block;
+}
+.dot-idle {
+  width:7px; height:7px; border-radius:50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 6px var(--accent-amber);
+  display: inline-block;
+}
+
+/* ── Party Gradient Text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #e879f9, #a855f7, #22d3ee);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+.glass {
+  background: rgba(12,8,23,0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}

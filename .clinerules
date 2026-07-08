@@ -1,0 +1,24 @@
+# LLMParty Coding Rules & Conventions
+
+## User Profile & Workspace Context
+- **Developer:** Bennett Moore
+- **Core Focus:** Note synchronization, knowledge management tooling, and AI orchestration infrastructure (ServiceNow, Notion, Obsidian).
+- **Key Projects:** `noteporter` (Electron sync client), `foundry-mcp` (ServiceNow MCP server), `ObsidianFlow` (note vaults), and `bmaia-working` (marketplace).
+- **Working Style:** Prefers complete, production-ready code matching existing structural patterns.
+
+You are an expert developer assistant optimized to write code and perform task orchestration in this repository. Follow these guidelines to maximize performance and avoid redundant execution loops.
+
+## System Guidelines
+1. **System & OS:** You are running on macOS. Prefer macOS native shell capabilities.
+2. **Framework:** This project uses Electron + React (Vite) + Vanilla CSS. Do not install Tailwind or other heavy UI frameworks.
+3. **Execution Safety:** When running shell commands, ensure they are non-interactive. Avoid launching commands that block the terminal unless they are intended to run in the background.
+
+## Code & Architecture Conventions
+1. **Vanilla CSS Styling:** Apply styling using Vanilla CSS classes. Define styling tokens in `src/index.css`. Keep design clean, dark-themed (#0A090F background, #7C3AED accent), and glassmorphic.
+2. **Strict IPC Integrity:** Keep React renderer and Electron main process isolated. All OS filesystem or process operations must pass through `preload.js` IPC handlers. Never attempt to use Node modules in the renderer.
+3. **Stat Persistence:** When monitoring status or calculating usage, update the state database via `window.electronAPI.saveStats()`.
+
+## Step-by-Step Problem Solving
+1. **Read Before Writing:** Always view existing files before making edits to avoid breaking adjacent modules.
+2. **Incremental Changes:** Propose small, logical edits. Verify code builds (`npm run build`) before declaring success.
+3. **Graceful Fallbacks:** If a filesystem path or system service (e.g., LM Studio port 1234) is inaccessible, display descriptive offline UI states instead of crashing.

@@ -11,8 +11,9 @@ const configPath = path.join(configDir, 'config.json');
 
 // Load settings
 function loadConfig() {
+  let cfg = {};
   if (!fs.existsSync(configPath)) {
-    return {
+    cfg = {
       tui: {
         theme: 'party',
         status_bar_format: ' 🎉 LLMPARTY | [{status}] {provider} ({model}) | Context: {context} | Cost: ${cost} | Savings: ${savings} ',
@@ -28,17 +29,39 @@ function loadConfig() {
         local: { base_url: 'http://localhost:1234/v1', model: 'qwen2.5-7b-instruct-mlx' }
       }
     };
+  } else {
+    try {
+      cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    } catch (e) {
+      cfg = {};
+    }
   }
+
+  // Deep merge mcp.json into cfg if it exists
   try {
-    return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } catch (e) {
-    return {};
-  }
+    const mcpPath = path.join(process.cwd(), 'mcp.json');
+    if (fs.existsSync(mcpPath)) {
+      const mcpData = JSON.parse(fs.readFileSync(mcpPath, 'utf-8'));
+      if (mcpData.mcpServers) {
+        cfg.mcpServers = { ...(cfg.mcpServers || {}), ...mcpData.mcpServers };
+      }
+    }
+  } catch(e) {}
+  
+  return cfg;
 }
 
 function saveConfig(cfg) {
   if (!fs.existsSync(configDir)) fs.mkdirSync(configDir);
   fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2), 'utf-8');
+  try {
+    if (cfg.mcpServers) {
+      const mcpPath = path.join(process.cwd(), 'mcp.json');
+      const mcpData = fs.existsSync(mcpPath) ? JSON.parse(fs.readFileSync(mcpPath, 'utf-8')) : { mcpServers: {} };
+      mcpData.mcpServers = { ...(mcpData.mcpServers || {}), ...cfg.mcpServers };
+      fs.writeFileSync(mcpPath, JSON.stringify(mcpData, null, 2), 'utf-8');
+    }
+  } catch(e) {}
 }
 
 // Banner rendering
@@ -192,6 +215,9 @@ if (command === 'run') {
     { cmd: '/config set primary', desc: 'Switch primary model provider' },
     { cmd: '/config set anthropic.api_key', desc: 'Set Anthropic API Key' },
     { cmd: '/agents list', desc: 'List active MCP and LLM agents' },
+    { cmd: '/mcp list', desc: 'List configured MCP servers' },
+    { cmd: '/mcp add', desc: 'Add a new MCP server (name cmd args...)' },
+    { cmd: '/mcp remove', desc: 'Remove an MCP server by name' },
     { cmd: '/clear', desc: 'Clear chat history context' },
     { cmd: '/exit',   desc: 'Exit LLMParty session' }
   ];
@@ -340,9 +366,44 @@ if (command === 'run') {
       rl.prompt();
     } else if (input === '/agents list' || input === '/agents' || input === 'agents') {
       console.log('\n\x1b[33m=== Connected LLM Agents Registry ===\x1b[0m');
-      console.log(`- \x1b[1mSystem Assistant\x1b[0m: Integrated via MCP plugins, handles config items.`);
-      console.log(`- \x1b[1mLocal Dev Agent\x1b[0m: Runs on ${config.backends.local.model || 'local'}, performs file edits.`);
+      const mcpServers = config.mcpServers || {};
+      const mcpNames = Object.keys(mcpServers);
+      if (mcpNames.length === 0) {
+        console.log(`- \x1b[90mNo MCP servers configured. Use /mcp add <name> <cmd> [args...]\x1b[0m`);
+      } else {
+        mcpNames.forEach(name => {
+          console.log(`- \x1b[1m${name}\x1b[0m: Integrated via MCP plugins, handles ${mcpServers[name].command}`);
+        });
+      }
+      console.log(`- \x1b[1mLocal Dev Agent\x1b[0m: Runs on ${config.backends.local?.model || 'local'}, performs file edits.`);
       console.log(`\x1b[90m(Type "/run <agent-name>" to launch, or "esc" to go back)\x1b[0m\n`);
+      drawStatusBar();
+      rl.prompt();
+    } else if (input.startsWith('/mcp ') || input.startsWith('mcp ')) {
+      const commandStr = input.startsWith('/') ? input.substring(1) : input;
+      const parts = commandStr.replace('mcp ', '').split(' ');
+      const action = parts[0];
+      const name = parts[1];
+      const cmd = parts[2];
+      const cmdArgs = parts.slice(3);
+      
+      if (!config.mcpServers) config.mcpServers = {};
+
+      if (action === 'list') {
+        console.log('\n🔌 \x1b[1mMCP Servers:\x1b[0m');
+        if (Object.keys(config.mcpServers).length === 0) console.log('  No servers configured.');
+        else console.log(JSON.stringify(config.mcpServers, null, 2));
+      } else if (action === 'add' && name && cmd) {
+        config.mcpServers[name] = { command: cmd, args: cmdArgs, env: { LLMPARTY_GATEWAY: 'http://localhost:9990/v1' } };
+        saveConfig(config);
+        console.log(`\n✨ Added MCP server \x1b[32m${name}\x1b[0m`);
+      } else if (action === 'remove' && name) {
+        delete config.mcpServers[name];
+        saveConfig(config);
+        console.log(`\n🗑️ Removed MCP server \x1b[31m${name}\x1b[0m`);
+      } else {
+        console.log('\nUsage: /mcp list | /mcp add <name> <cmd> [args...] | /mcp remove <name>');
+      }
       drawStatusBar();
       rl.prompt();
     } else if (input.startsWith('config set ') || input.startsWith('/config set ')) {
@@ -529,6 +590,38 @@ if (command === 'run') {
     current[keys[keys.length - 1]] = typedValue;
     saveConfig(config);
     console.log(`✨ Successfully set \x1b[32m${key}\x1b[0m to \x1b[36m"${value}"\x1b[0m!`);
+  }
+} else if (command === 'mcp') {
+  const config = loadConfig();
+  const sub = args[1];
+  const name = args[2];
+  const cmd = args[3];
+  const cmdArgs = args.slice(4);
+  
+  if (!config.mcpServers) config.mcpServers = {};
+
+  if (!sub || sub === 'list') {
+    console.log('\n🔌 \x1b[1mMCP Servers:\x1b[0m');
+    console.log(JSON.stringify(config.mcpServers, null, 2));
+  } else if (sub === 'add') {
+    if (!name || !cmd) {
+      console.log('Error: Usage: llmparty mcp add <name> <command> [args...]');
+      process.exit(1);
+    }
+    config.mcpServers[name] = { command: cmd, args: cmdArgs, env: { LLMPARTY_GATEWAY: 'http://localhost:9990/v1' } };
+    saveConfig(config);
+    console.log(`✨ Added MCP server \x1b[32m${name}\x1b[0m!`);
+  } else if (sub === 'remove') {
+    if (!name) {
+      console.log('Error: Usage: llmparty mcp remove <name>');
+      process.exit(1);
+    }
+    delete config.mcpServers[name];
+    saveConfig(config);
+    console.log(`🗑️ Removed MCP server \x1b[31m${name}\x1b[0m!`);
+  } else {
+    console.log('Error: Unknown mcp command. Use list, add, or remove.');
+    process.exit(1);
   }
 } else if (command === 'status') {
   const config = loadConfig();
