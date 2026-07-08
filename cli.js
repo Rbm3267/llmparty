@@ -105,9 +105,11 @@ const command = args[0] || 'run';
 
 if (command === 'run') {
   if (process.stdout.isTTY) {
-    console.clear();
+    // Clear the screen FIRST and set up scroll region BEFORE printing anything.
+    // This prevents the banner from flashing at full-screen height and then jumping.
+    process.stdout.write('\x1b[2J\x1b[H'); // clear + home cursor
     const rows = process.stdout.rows || 24;
-    process.stdout.write(`\x1b[1;${rows - 4}r`); // Setup scroll region early
+    process.stdout.write(`\x1b[1;${rows - 6}r`); // reserve bottom 6 rows for chat+status
   }
   
   printPartyBanner();
@@ -121,12 +123,7 @@ if (command === 'run') {
   console.log(`\x1b[32m✔\x1b[0m Telemetry proxy online and awaiting requests.`);
   console.log(`\x1b[38;5;51mLLM>\x1b[0m Greetings! I am ready to assist. Type /help to see a list of available commands.\n`);
   
-  if (process.stdout.isTTY) {
-    const rows = process.stdout.rows || 24;
-    // Push the cursor down to the bottom of the scroll region
-    // The banner is about 15 lines. We add newlines to push it down.
-    process.stdout.write('\n'.repeat(Math.max(0, rows - 25))); 
-  }
+  // We do NOT push the cursor down here. Let the warnings print normally at the top.
 
   // Read persisted provider state to show degraded warnings at startup
   try {
@@ -164,16 +161,7 @@ if (command === 'run') {
   }
 
 
-  const readline = require('readline');
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    prompt: '\x1b[1m❯\x1b[0m '
-  });
-
-  // Keep track of token stats in memory for local status bar
-  let stats = { context: '200k', cost: 6.51, savings: 0.36, sessionCost: 0.01 };
-  let chatHistory = [];
+  // We will initialize readline later after the startup sequence is done
 
   // Tracks the actual provider+model used in the most recent gateway response
   let lastUsed = {
@@ -191,12 +179,11 @@ if (command === 'run') {
     return model;
   }
 
-  // --- Claude Code Style Pinned Status Bar ---
+  // --- Pinned Status Bar & Scroll Region ---
   function setupScrollRegion() {
     if (!process.stdout.isTTY) return;
     const rows = process.stdout.rows || 24;
-    // Set scrolling margin from top of screen down to rows-4
-    process.stdout.write(`\x1b[1;${rows - 4}r`);
+    process.stdout.write(`\x1b[1;${rows - 6}r`);
   }
   
   if (process.stdout.isTTY) {
@@ -212,29 +199,13 @@ if (command === 'run') {
     // We leave this as a no-op so old calls don't break. The real drawing happens in _refreshLine.
   }
 
-  const originalRefresh = rl._refreshLine;
-  rl._refreshLine = function() {
-    originalRefresh.call(this);
-    if (!process.stdout.isTTY) return;
-    const rows = process.stdout.rows || 24;
-    const width = process.stdout.columns || 80;
-    const divider = '\x1b[90m' + '─'.repeat(width) + '\x1b[0m';
-    
-    let modelName = (lastUsed.model === 'unknown' ? config.backends.primary : lastUsed.model).replace(/^models\//, '');
-    if (modelName.length > 20) modelName = modelName.substring(0, 20) + '...';
-    
-    // Line 1: 🔵 claude-cli (cost: $0.005 / tokens: 1250)
-    const line1 = `\x1b[38;5;33m🔵 ${modelName}\x1b[0m \x1b[32m(cost: $${stats.cost.toFixed(3)} / tokens: ${stats.context})\x1b[0m`;
-    // Line 2: ⚙ LLMParty v1.0 Connected to localhost:9990
-    const line2 = `\x1b[38;5;199m⚙ LLMParty v1.0\x1b[0m  \x1b[32mConnected to localhost:9990\x1b[0m`;
-    // Line 3: ← for agents
-    const line3 = `\x1b[90m← for agents\x1b[0m`;
-
-    process.stdout.write(`\x1b[s\x1b[${rows - 3};1H\x1b[2K\r${divider}\n\x1b[2K\r${line1}\n\x1b[2K\r${line2}\n\x1b[2K\r${line3}\x1b[u`);
-  };
+  // We need to define stats and chatHistory up here so they are available
+  let stats = { context: '200k', cost: 6.51, savings: 0.36, sessionCost: 0.01 };
+  let chatHistory = [];
+  
   let showSuggestions = false;
   let suggestionIndex = 0;
-  let currentBuffer = ''; // Track typed line buffer
+  let currentSuggestions = []; // Track typed line buffer
 
   const suggestions = [
     { cmd: '/status', desc: 'Check rates/failover diagnostics' },
@@ -358,7 +329,56 @@ if (command === 'run') {
     }
   });
 
-  // Initial draw of the status bar and prompt
+  // If they passed a prompt string directly, just echo it (for standard piping)
+  if (args.length > 1) {
+    console.log(`Sending prompt: ${args.slice(1).join(' ')}`);
+    process.exit(0);
+  }
+
+  // Now that the startup sequence is done and the cursor is naturally at the bottom 
+  // of the startup text, we initialize readline. This ensures readline captures
+  // the correct Y-coordinate and doesn't jump to the bottom of the screen.
+  
+  const readline = require('readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: '\x1b[90m' + '─'.repeat(process.stdout.columns || 80) + '\x1b[0m\n\x1b[1m❯\x1b[0m '
+  });
+  
+  if (process.stdout.isTTY) {
+    process.stdout.on('resize', () => {
+      rl.setPrompt('\x1b[90m' + '─'.repeat(process.stdout.columns || 80) + '\x1b[0m\n\x1b[1m❯\x1b[0m ');
+    });
+  }
+  
+  const originalRefresh = rl._refreshLine;
+  rl._refreshLine = function() {
+    originalRefresh.call(this);
+    if (!process.stdout.isTTY) return;
+    const rows = process.stdout.rows || 24;
+    const width = process.stdout.columns || 80;
+    const divider = '\x1b[90m' + '─'.repeat(width) + '\x1b[0m';
+    
+    let modelName = (lastUsed.model === 'unknown' ? config.backends.primary : lastUsed.model).replace(/^models\//, '');
+    if (modelName.length > 20) modelName = modelName.substring(0, 20) + '...';
+    
+    const line1 = `\x1b[38;5;33m🔵 ${modelName}\x1b[0m \x1b[32m(cost: $${stats.cost.toFixed(3)} / tokens: ${stats.context})\x1b[0m`;
+    const line2 = `\x1b[38;5;199m⚙ LLMParty v1.0\x1b[0m  \x1b[32mConnected to localhost:9990\x1b[0m`;
+    const line3 = `\x1b[90m← for agents\x1b[0m`;
+
+    // Draw the bottom divider at rows - 4, and the status lines at rows - 3, rows - 2, and rows - 1
+    process.stdout.write(`\x1b[s\x1b[${rows - 4};1H\x1b[2K\r${divider}\n\x1b[${rows - 3};1H\x1b[2K\r${line1}\n\x1b[${rows - 2};1H\x1b[2K\r${line2}\n\x1b[${rows - 1};1H\x1b[2K\r${line3}\x1b[u`);
+  };
+
+  function drawStatusBar(dots = 0) {}
+
+  if (process.stdout.isTTY) {
+    const rows = process.stdout.rows || 24;
+    // Move cursor to the bottom of the scroll region (rows - 6) so the chat bar starts there
+    process.stdout.write(`\x1b[${rows - 6};1H`);
+  }
+  
   drawStatusBar();
   rl.prompt();
 
