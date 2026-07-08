@@ -137,7 +137,7 @@ if (command === 'run') {
 
   function formatModelLabel(model) {
     if (!model || model === 'unknown') return config.backends.primary;
-    if (/claude.enterprise/i.test(model) || model === 'claude-enterprise') return `claude-enterprise (claude --print)`;
+    if (/claude.cli/i.test(model) || model === 'claude-cli') return `claude-cli (claude --print)`;
     if (/claude/i.test(model)) return `anthropic / ${model}`;
     if (/gemini/i.test(model)) return `gemini / ${model.replace('models/', '')}`;
     if (/gpt|o1|o3/i.test(model))  return `openai / ${model}`;
@@ -177,7 +177,7 @@ if (command === 'run') {
     let modelName = (lastUsed.model === 'unknown' ? config.backends.primary : lastUsed.model).replace(/^models\//, '');
     if (modelName.length > 20) modelName = modelName.substring(0, 20) + '...';
     const line1 = `\x1b[38;5;33m🔵 ${modelName}\x1b[0m  \x1b[90m·\x1b[0m  \x1b[90msession <$${stats.sessionCost.toFixed(2)} / month \x1b[32m$${stats.cost.toFixed(2)}\x1b[0m`;
-    const line2 = `\x1b[32m⬢ JARVIS v11.7.5\x1b[0m  \x1b[90m·\x1b[0m  \x1b[35mConnected to aifoundrydev.service-now.com\x1b[0m`;
+    const line2 = `\x1b[32m⬢ JARVIS v11.7.5\x1b[0m  \x1b[90m·\x1b[0m  \x1b[35mConnected to localhost:9990\x1b[0m`;
     const line3 = `\x1b[90m← for agents\x1b[0m`;
 
     process.stdout.write(`\x1b[s\x1b[${rows - 3};1H\x1b[2K\r${divider}\n\x1b[2K\r${line1}\n\x1b[2K\r${line2}\n\x1b[2K\r${line3}\x1b[u`);
@@ -340,7 +340,7 @@ if (command === 'run') {
       rl.prompt();
     } else if (input === '/agents list' || input === '/agents' || input === 'agents') {
       console.log('\n\x1b[33m=== Connected LLM Agents Registry ===\x1b[0m');
-      console.log(`- \x1b[1mServiceNow Assistant\x1b[0m: Integrated via MCP plugins, handles tickets, config items.`);
+      console.log(`- \x1b[1mSystem Assistant\x1b[0m: Integrated via MCP plugins, handles config items.`);
       console.log(`- \x1b[1mLocal Dev Agent\x1b[0m: Runs on ${config.backends.local.model || 'local'}, performs file edits.`);
       console.log(`\x1b[90m(Type "/run <agent-name>" to launch, or "esc" to go back)\x1b[0m\n`);
       drawStatusBar();
@@ -438,8 +438,8 @@ if (command === 'run') {
               let providerLabel = usedModel;
               let labelColor = '\x1b[32m';
 
-              if (/claude.enterprise/i.test(usedModel) || usedModel === 'claude-enterprise') {
-                providerLabel = `claude-enterprise (\x1b[35mclaude --print\x1b[36m)`;
+              if (/claude.cli/i.test(usedModel) || usedModel === 'claude-cli') {
+                providerLabel = `claude-cli (\x1b[35mclaude --print\x1b[36m)`;
                 labelColor = '\x1b[36m';
               } else if (/claude/i.test(usedModel)) {
                 providerLabel = `anthropic / ${usedModel}`;
@@ -459,7 +459,7 @@ if (command === 'run') {
               const prevModel = lastUsed.model;
               lastUsed.model = usedModel;
               // Derive provider from model name
-              if (/claude.enterprise/i.test(usedModel) || usedModel === 'claude-enterprise') lastUsed.provider = 'claude_enterprise';
+              if (/claude.cli/i.test(usedModel) || usedModel === 'claude-cli') lastUsed.provider = 'claude_cli';
               else if (/claude/i.test(usedModel))                  lastUsed.provider = 'anthropic';
               else if (/gemini/i.test(usedModel))                   lastUsed.provider = 'gemini';
               else if (/gpt|o1|o3/i.test(usedModel))               lastUsed.provider = 'openai';

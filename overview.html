@@ -213,14 +213,14 @@
     <header>
       <div class="badge">v1.0.0 — Now Open Source</div>
       <h1>LLMParty</h1>
-      <p class="subtitle">A resilient, intelligent AI gateway and terminal multiplexer. Seamlessly route prompts across Claude Enterprise, local models, and external APIs with zero downtime.</p>
+      <p class="subtitle">A resilient, intelligent AI gateway and terminal multiplexer. Seamlessly route prompts across Claude CLI, local models, and external APIs with zero downtime.</p>
     </header>
 
     <div class="grid">
       <div class="card">
         <div class="icon">🚀</div>
         <h3>Resilient Failover</h3>
-        <p>Instantly fail over from primary cloud providers (like Claude Enterprise) to local backups (LM Studio, Ollama) if rate limits or spend caps are hit.</p>
+        <p>Instantly fail over from primary cloud providers (like Claude CLI) to local backups (LM Studio, Ollama) if rate limits or spend caps are hit.</p>
       </div>
       
       <div class="card">
@@ -232,7 +232,7 @@
       <div class="card">
         <div class="icon">🔌</div>
         <h3>MCP Integrated</h3>
-        <p>Built-in support for Model Context Protocol (MCP) plugins, connecting seamlessly to services like ServiceNow, AIFoundry, and custom agents.</p>
+        <p>Built-in support for Model Context Protocol (MCP) plugins, connecting seamlessly to services like internal databases, AI gateways, and custom agents.</p>
       </div>
 
       <div class="card">
@@ -252,13 +252,13 @@
         <div class="t-accent">🎉 ----------- Resilient AI Gateway Active ----------- 🎉</div>
         <br>
         <div>📡 Telemetry Proxy active at: http://localhost:9990/v1</div>
-        <div>👉 Primary Provider:       <span class="t-green">claude_enterprise</span></div>
+        <div>👉 Primary Provider:       <span class="t-green">claude_cli</span></div>
         <div>👉 Local Backend Fallback: <span class="t-blue">lmstudio</span></div>
-        <div class="t-yellow">⚠️  claude_enterprise: DEGRADED — monthly spend limit (auto-clears 12:00 AM)</div>
+        <div class="t-yellow">⚠️  claude_cli: DEGRADED — monthly spend limit (auto-clears 12:00 AM)</div>
         <br>
         <div class="t-dim">────────────────────────────────────────────────────────────────────────────────</div>
         <div><span class="t-blue">🔵 gemini-2.5-flash</span>  <span class="t-dim">·  session &lt;$0.01 / month $6.51</span></div>
-        <div><span class="t-green">⬢ JARVIS v11.7.5</span>  <span class="t-dim">·</span>  <span style="color:#d946ef">Connected to aifoundrydev.service-now.com</span></div>
+        <div><span class="t-green">⬢ JARVIS v11.7.5</span>  <span class="t-dim">·</span>  <span style="color:#d946ef">Connected to localhost:9990</span></div>
         <div class="t-dim">← for agents</div>
         <div><span style="font-weight: bold; color: #fff;">❯</span> <span style="opacity:0.8">Deploying local agent...</span><span style="animation: blink 1s step-end infinite;">█</span></div>
       </div>

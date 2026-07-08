@@ -30,7 +30,7 @@ const CLAUDE_ERROR_PATTERNS = [
 function isClaudeCliError(text) {
   for (const pattern of CLAUDE_ERROR_PATTERNS) {
     if (pattern.test(text)) {
-      console.warn(`⚠️  [claude_enterprise] Detected soft error in output (pattern: ${pattern})`);
+      console.warn(`⚠️  [claude_cli] Detected soft error in output (pattern: ${pattern})`);
       console.warn(`    Output was: "${text.slice(0, 120).replace(/\n/g, ' ')}..."`);
       return true;
     }
@@ -38,10 +38,10 @@ function isClaudeCliError(text) {
   return false;
 }
 
-// ── Enterprise Claude via `claude -p` subprocess ───────────────────────────
+// ── Claude via `claude -p` subprocess ───────────────────────────
 // Used when provider=anthropic but no API key is configured.
 // Requires the Claude Code CLI to be authenticated (`claude auth`).
-function callClaudeEnterprise(messages, modelHint, onFirstToken) {
+function callClaudeCli(messages, modelHint, onFirstToken) {
   return new Promise((resolve, reject) => {
     // Build a plain-text prompt from the messages array
     const parts = [];
@@ -80,15 +80,15 @@ function callClaudeEnterprise(messages, modelHint, onFirstToken) {
       }
       // Soft errors: exit 0 but output is a CLI error/limit message
       if (isClaudeCliError(text)) {
-        return reject(new Error(`claude_enterprise soft error (spend/rate/auth limit) — failing over`));
+        return reject(new Error(`claude_cli soft error (spend/rate/auth limit) — failing over`));
       }
 
       // Wrap in OpenAI-compatible chat.completion format
       resolve({
-        id: 'chatcmpl-claude-enterprise-' + Date.now(),
+        id: 'chatcmpl-claude-cli-' + Date.now(),
         object: 'chat.completion',
         created: Math.round(Date.now() / 1000),
-        model: modelHint || 'claude-enterprise',
+        model: modelHint || 'claude-cli',
         choices: [{ index: 0, message: { role: 'assistant', content: text }, finish_reason: 'stop' }],
         usage: {
           prompt_tokens: Math.ceil(prompt.length / 4),
@@ -284,24 +284,24 @@ function forwardRequest(config, index, req, res, requestData, startTime) {
     apiKey = provConfig.api_key || '';
     modelName = provConfig.model || '';
 
-    if (provider === 'claude_enterprise') {
+    if (provider === 'claude_cli') {
       // ── Always route through `claude -p` (enterprise SSO, no API key needed) ──
-      console.log('🎩 [claude_enterprise] Routing via claude --print subprocess');
+      console.log('🎩 [claude_cli] Routing via claude --print subprocess');
       let parsedReq = {};
       try { parsedReq = JSON.parse(requestData); } catch(e) {}
       const startTime2 = startTime || Date.now();
       let firstTokenAt = null;
-      callClaudeEnterprise(
+      callClaudeCli(
         parsedReq.messages || [],
-        parsedReq.model || modelName || 'claude-enterprise',
+        parsedReq.model || modelName || 'claude-cli',
         () => { firstTokenAt = Date.now(); }
       ).then(openaiResp => {
         const duration = Date.now() - startTime2;
         const ttft = firstTokenAt ? firstTokenAt - startTime2 : duration;
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(openaiResp));
-        markProviderHealthy('claude_enterprise'); // successful → clear any stale degraded state
-        saveLastUsedProvider('claude_enterprise', openaiResp.model);
+        markProviderHealthy('claude_cli'); // successful → clear any stale degraded state
+        saveLastUsedProvider('claude_cli', openaiResp.model);
         logProxyCompletion({
           path: req.url, model: openaiResp.model,
           promptText: parsedReq.messages?.slice(-1)[0]?.content || '',
@@ -315,15 +315,15 @@ function forwardRequest(config, index, req, res, requestData, startTime) {
         const errMsg = err.message || '';
         // Detect the error type and persist it so future sessions skip this provider
         if (/spend|monthly|quota|billing|payment/i.test(errMsg)) {
-          markProviderDegraded('claude_enterprise', 'monthly spend limit');
+          markProviderDegraded('claude_cli', 'monthly spend limit');
         } else if (/rate.limit|too.many/i.test(errMsg)) {
-          markProviderDegraded('claude_enterprise', 'rate limit');
+          markProviderDegraded('claude_cli', 'rate limit');
         } else if (/auth|unauthorized|session/i.test(errMsg)) {
-          markProviderDegraded('claude_enterprise', 'auth error — run: claude auth');
+          markProviderDegraded('claude_cli', 'auth error — run: claude auth');
         } else {
-          markProviderDegraded('claude_enterprise', errMsg.slice(0, 80));
+          markProviderDegraded('claude_cli', errMsg.slice(0, 80));
         }
-        console.error('❌ claude_enterprise failed:', errMsg, '— failing over...');
+        console.error('❌ claude_cli failed:', errMsg, '— failing over...');
         forwardRequest(config, index + 1, req, res, requestData, startTime);
       });
       return;
@@ -334,7 +334,7 @@ function forwardRequest(config, index, req, res, requestData, startTime) {
     } else if (provider === 'anthropic') {
       // Direct API key path — no key means this provider will get a 401 and fail over
       if (!apiKey) {
-        console.warn('⚠️  [anthropic] No API key set — will fail over. Add claude_enterprise to pipeline for keyless access.');
+        console.warn('⚠️  [anthropic] No API key set — will fail over. Add claude_cli to pipeline for keyless access.');
       }
       targetUrl = 'https://api.anthropic.com/v1/messages';
     } else if (provider === 'gemini') {
