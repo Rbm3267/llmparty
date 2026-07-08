@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const os = require('os');
+const readline = require('readline');
 const { spawn, exec } = require('child_process');
 
 const configDir = path.join(os.homedir(), '.llmparty');
@@ -339,7 +340,7 @@ if (command === 'run') {
   // of the startup text, we initialize readline. This ensures readline captures
   // the correct Y-coordinate and doesn't jump to the bottom of the screen.
   
-  const readline = require('readline');
+  // readline is already required at the top of the file.
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
