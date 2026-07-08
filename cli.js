@@ -104,6 +104,12 @@ const args = process.argv.slice(2);
 const command = args[0] || 'run';
 
 if (command === 'run') {
+  if (process.stdout.isTTY) {
+    console.clear();
+    const rows = process.stdout.rows || 24;
+    process.stdout.write(`\x1b[1;${rows - 4}r`); // Setup scroll region early
+  }
+  
   printPartyBanner();
   
   // Real startup sequence styled like the mockup
@@ -114,6 +120,13 @@ if (command === 'run') {
   console.log(`\x1b[32m✔\x1b[0m Fallback Pipeline: ${config.backends.pipeline?.join(' → ') || 'None'}`);
   console.log(`\x1b[32m✔\x1b[0m Telemetry proxy online and awaiting requests.`);
   console.log(`\x1b[38;5;51mLLM>\x1b[0m Greetings! I am ready to assist. Type /help to see a list of available commands.\n`);
+  
+  if (process.stdout.isTTY) {
+    const rows = process.stdout.rows || 24;
+    // Push the cursor down to the bottom of the scroll region
+    // The banner is about 15 lines. We add newlines to push it down.
+    process.stdout.write('\n'.repeat(Math.max(0, rows - 25))); 
+  }
 
   // Read persisted provider state to show degraded warnings at startup
   try {
@@ -187,7 +200,7 @@ if (command === 'run') {
   }
   
   if (process.stdout.isTTY) {
-    setupScrollRegion();
+    // Already setup initially, but hook resize
     process.stdout.on('resize', setupScrollRegion);
     process.on('exit', () => {
       // Reset scroll region on exit

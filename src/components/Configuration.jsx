@@ -1,10 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { CircularProgress } from '@mui/material';
 
+const POPULAR_PLUGINS = [
+  { name: 'Memory', pkg: '@modelcontextprotocol/server-memory', desc: 'Knowledge graph memory server' },
+  { name: 'SQLite', pkg: '@modelcontextprotocol/server-sqlite', desc: 'Query local SQLite databases' },
+  { name: 'PostgreSQL', pkg: '@modelcontextprotocol/server-postgres', desc: 'Query PostgreSQL databases' },
+  { name: 'GitHub', pkg: '@modelcontextprotocol/server-github', desc: 'Interact with GitHub API' },
+  { name: 'Google Drive', pkg: '@modelcontextprotocol/server-google-drive', desc: 'Access Google Drive files' },
+  { name: 'Puppeteer', pkg: '@modelcontextprotocol/server-puppeteer', desc: 'Browser automation & scraping' },
+  { name: 'Fetch', pkg: '@modelcontextprotocol/server-fetch', desc: 'Fetch web pages' },
+];
+
 export default function Configuration({ configs, onSaveConfigs, triggerToast }) {
   const [form, setForm]   = useState({ tui: {}, backends: {}, mcpServers: {} });
   const [testing, setTesting] = useState(null);
   const [dirty, setDirty] = useState(false);
+  
+  // MCP Modal State
+  const [showAddMcp, setShowAddMcp] = useState(false);
+  const [mcpSearch, setMcpSearch] = useState('');
+  const [mcpCustomInput, setMcpCustomInput] = useState('');
 
   useEffect(() => {
     if (configs) { setForm(configs); setDirty(false); }
@@ -150,18 +165,87 @@ export default function Configuration({ configs, onSaveConfigs, triggerToast }) 
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
               Total Active MCP<br/>Servers: <b style={{ color: '#fff' }}>{Object.keys(form.mcpServers || {}).length}</b> <span className="status-dot status-cyan" />
             </div>
-            <button className="btn btn-primary" onClick={() => {
-              const newName = prompt("Enter new MCP server name:");
-              if (newName && !form.mcpServers?.[newName]) {
-                set(`mcpServers.${newName}`, { command: 'node', args: [], env: {} });
-              }
-            }}>
+            <button className="btn btn-primary" onClick={() => setShowAddMcp(true)}>
               Add New Plugin
             </button>
           </div>
         </div>
 
       </div>
+
+      {/* MCP Add Modal */}
+      {showAddMcp && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div className="card" style={{ width: 450, padding: 24, margin: 0, background: 'var(--bg-surface)' }}>
+            <div className="row sb mb-3">
+              <h3 style={{ margin: 0, color: 'var(--accent-cyan)' }}>Add MCP Plugin</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowAddMcp(false)}>✕</button>
+            </div>
+            
+            <div className="field-group mb-3">
+              <label className="field-label">Custom NPM Package / GitHub Repo Link</label>
+              <div className="row gap-2">
+                <input 
+                  type="text" 
+                  className="field-input" 
+                  style={{ flex: 1 }}
+                  placeholder="e.g. @modelcontextprotocol/server-memory or https://github.com/..." 
+                  value={mcpCustomInput}
+                  onChange={e => setMcpCustomInput(e.target.value)}
+                />
+                <button className="btn btn-primary" onClick={() => {
+                  if (!mcpCustomInput) return;
+                  let pkgName = mcpCustomInput;
+                  if (mcpCustomInput.includes('github.com')) {
+                    // Extract a sensible name from the repo
+                    pkgName = mcpCustomInput.split('/').pop().replace('.git', '');
+                    triggerToast("For GitHub repos, you may need to clone/build them manually if they aren't NPM packages.", "warning");
+                  } else {
+                    pkgName = mcpCustomInput;
+                  }
+                  
+                  const srvName = pkgName.replace('@modelcontextprotocol/', '').replace('server-', '');
+                  set(`mcpServers.${srvName}`, { command: 'npx', args: ['-y', pkgName], env: {} });
+                  setMcpCustomInput('');
+                  setShowAddMcp(false);
+                }}>Add</button>
+              </div>
+            </div>
+
+            <div className="field-group mb-2">
+              <label className="field-label">Or Select a Popular Plugin</label>
+              <input 
+                type="text" 
+                className="field-input" 
+                placeholder="Search official plugins..." 
+                value={mcpSearch}
+                onChange={e => setMcpSearch(e.target.value)}
+              />
+            </div>
+
+            <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8 }}>
+              {POPULAR_PLUGINS.filter(p => p.name.toLowerCase().includes(mcpSearch.toLowerCase())).map(plugin => (
+                <div key={plugin.pkg} className="row sb" style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{plugin.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{plugin.desc}</div>
+                  </div>
+                  <button className="btn btn-ghost btn-sm" onClick={() => {
+                    const srvName = plugin.pkg.replace('@modelcontextprotocol/', '').replace('server-', '');
+                    set(`mcpServers.${srvName}`, { command: 'npx', args: ['-y', plugin.pkg], env: {} });
+                    setShowAddMcp(false);
+                  }}>Add</button>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
