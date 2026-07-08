@@ -206,7 +206,8 @@ if (command === 'run') {
   
   let showSuggestions = false;
   let suggestionIndex = 0;
-  let currentSuggestions = []; // Track typed line buffer
+  let currentBuffer = '';       // Tracks what the user is currently typing
+  let currentSuggestions = [];
 
   const suggestions = [
     { cmd: '/status', desc: 'Check rates/failover diagnostics' },
