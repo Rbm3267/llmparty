@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "system-assistant": {
+      "command": "node",
+      "args": [
+        "path/to/your/custom/mcp-server.js"
+      ],
+      "env": {
+        "LLMPARTY_GATEWAY": "http://localhost:9990/v1"
+      }
+    }
+  }
+}

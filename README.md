@@ -75,6 +75,23 @@ llmparty config set anthropic.api_key "sk-ant-..."
 llmparty config set backends.primary "claude_cli"
 ```
 
+### MCP Configuration
+LLMParty includes a sample `mcp.json` file to help you configure Model Context Protocol (MCP) servers.
+To add your own tools or external data sources, simply modify the `mcp.json` file in the root of the repository:
+```json
+{
+  "mcpServers": {
+    "system-assistant": {
+      "command": "node",
+      "args": ["path/to/your/custom/mcp-server.js"],
+      "env": {
+        "LLMPARTY_GATEWAY": "http://localhost:9990/v1"
+      }
+    }
+  }
+}
+```
+
 ### Launching the Dashboard (Electron App)
 LLMParty comes with a full graphical dashboard.
 ```bash
@@ -98,4 +115,4 @@ This completely eliminates the friction of manually switching API keys or openin
 ---
 
 ## 📄 License
-Private - Do Not Distribute without permission.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
