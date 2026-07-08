@@ -65,8 +65,6 @@ function saveConfig(cfg) {
 }
 
 // Banner rendering
-const PARTY_COLORS = [
-  '\x1b[35m', // Magenta
 const GRADIENT = [
   '\x1b[38;5;199m', // Pink
   '\x1b[38;5;206m',
