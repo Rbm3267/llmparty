@@ -67,29 +67,39 @@ function saveConfig(cfg) {
 // Banner rendering
 const PARTY_COLORS = [
   '\x1b[35m', // Magenta
-  '\x1b[36m', // Cyan
-  '\x1b[33m', // Yellow
-  '\x1b[32m', // Green
-  '\x1b[31m', // Red
-  '\x1b[34m'  // Blue
+const GRADIENT = [
+  '\x1b[38;5;199m', // Pink
+  '\x1b[38;5;206m',
+  '\x1b[38;5;213m',
+  '\x1b[38;5;141m',
+  '\x1b[38;5;105m',
+  '\x1b[38;5;81m',  // Cyan
+  '\x1b[38;5;51m'
 ];
 
 function printPartyBanner() {
-  // Spells "LLMPARTY" in beautiful 3D block text
   const bannerLines = [
-    "  _      _      __  __ _____   ___  _____ _______     __ ",
-    " | |    | |    |  \\/  |  __ \\ / _ \\|  __ \\__   __\\ \\   / / ",
-    " | |    | |    | |\\/| | |__) | |_| | |__) | | |   \\ \\_/ /  ",
-    " | |___ | |___ | |  | |  ___/|  _  |  _  /  | |    \\   /   ",
-    " |_____||_____||_|  |_|_|    |_| |_|_| \\_\\  |_|     |_|    "
+    " _      _      __  __ _____           _         ",
+    "| |    | |    |  \\/  |  __ \\         | |        ",
+    "| |    | |    | \\  / | |__) |_ _ _ __| |_ _   _ ",
+    "| |    | |    | |\\/| |  ___/ _` | '__| __| | | |",
+    "| |____| |____| |  | | |  | (_| | |  | |_| |_| |",
+    "|______|______|_|  |_|_|   \\__,_|_|   \\__|\\__, |",
+    "                                           __/ |",
+    "                                          |___/ "
   ];
   
-  // Print initial static banner with beautiful party colors
-  console.log('\n\x1b[1m' + PARTY_COLORS[0] + '🎉 ---------------------------------------------------- 🎉\x1b[0m');
-  bannerLines.forEach((line, index) => {
-    console.log(PARTY_COLORS[index % PARTY_COLORS.length] + line + '\x1b[0m');
+  console.log();
+  bannerLines.forEach((line) => {
+    // Apply a horizontal gradient across each line
+    let gradLine = '';
+    for (let i = 0; i < line.length; i++) {
+      const colorIdx = Math.floor((i / line.length) * GRADIENT.length);
+      gradLine += GRADIENT[colorIdx] + line[i];
+    }
+    console.log(gradLine + '\x1b[0m');
   });
-  console.log('\x1b[1m' + PARTY_COLORS[3] + '🎉 ----------- Resilient AI Gateway Active ----------- 🎉\x1b[0m\n');
+  console.log();
 }
 
 const args = process.argv.slice(2);
@@ -97,13 +107,15 @@ const command = args[0] || 'run';
 
 if (command === 'run') {
   printPartyBanner();
-  console.log('🎈 Starting resilient gateway session...');
   
-  // Expose status update loop in background
+  // Real startup sequence styled like the mockup
   const config = loadConfig();
-  console.log(`📡 Telemetry Proxy active at: http://localhost:9990/v1`);
-  console.log(`👉 Primary Provider:       \x1b[32m${config.backends.primary}\x1b[0m`);
-  console.log(`👉 Local Backend Fallback: \x1b[34m${config.backends.local_provider}\x1b[0m`);
+  console.log(`\x1b[38;5;51m❯\x1b[0m Loading configurations...`);
+  console.log(`\x1b[32m✔\x1b[0m Configs loaded from ~/.llmparty`);
+  console.log(`\x1b[32m✔\x1b[0m Primary Provider: ${config.backends.primary}`);
+  console.log(`\x1b[32m✔\x1b[0m Fallback Pipeline: ${config.backends.pipeline?.join(' → ') || 'None'}`);
+  console.log(`\x1b[32m✔\x1b[0m Telemetry proxy online and awaiting requests.`);
+  console.log(`\x1b[38;5;51mLLM>\x1b[0m Greetings! I am ready to assist. Type /help to see a list of available commands.\n`);
 
   // Read persisted provider state to show degraded warnings at startup
   try {
@@ -199,8 +211,12 @@ if (command === 'run') {
     
     let modelName = (lastUsed.model === 'unknown' ? config.backends.primary : lastUsed.model).replace(/^models\//, '');
     if (modelName.length > 20) modelName = modelName.substring(0, 20) + '...';
-    const line1 = `\x1b[38;5;33m🔵 ${modelName}\x1b[0m  \x1b[90m·\x1b[0m  \x1b[90msession <$${stats.sessionCost.toFixed(2)} / month \x1b[32m$${stats.cost.toFixed(2)}\x1b[0m`;
-    const line2 = `\x1b[32m⬢ JARVIS v11.7.5\x1b[0m  \x1b[90m·\x1b[0m  \x1b[35mConnected to localhost:9990\x1b[0m`;
+    
+    // Line 1: 🔵 claude-cli (cost: $0.005 / tokens: 1250)
+    const line1 = `\x1b[38;5;33m🔵 ${modelName}\x1b[0m \x1b[32m(cost: $${stats.cost.toFixed(3)} / tokens: ${stats.context})\x1b[0m`;
+    // Line 2: ⚙ LLMParty v1.0 Connected to localhost:9990
+    const line2 = `\x1b[38;5;199m⚙ LLMParty v1.0\x1b[0m  \x1b[32mConnected to localhost:9990\x1b[0m`;
+    // Line 3: ← for agents
     const line3 = `\x1b[90m← for agents\x1b[0m`;
 
     process.stdout.write(`\x1b[s\x1b[${rows - 3};1H\x1b[2K\r${divider}\n\x1b[2K\r${line1}\n\x1b[2K\r${line2}\n\x1b[2K\r${line3}\x1b[u`);
