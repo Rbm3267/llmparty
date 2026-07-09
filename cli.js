@@ -345,12 +345,12 @@ if (command === 'run') {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: '\x1b[90m' + '─'.repeat(process.stdout.columns || 80) + '\x1b[0m\n\x1b[1m❯\x1b[0m '
+    prompt: '\x1b[1m❯\x1b[0m '
   });
   
   if (process.stdout.isTTY) {
     process.stdout.on('resize', () => {
-      rl.setPrompt('\x1b[90m' + '─'.repeat(process.stdout.columns || 80) + '\x1b[0m\n\x1b[1m❯\x1b[0m ');
+      rl.setPrompt('\x1b[1m❯\x1b[0m ');
     });
   }
   
